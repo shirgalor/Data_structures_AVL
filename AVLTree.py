@@ -68,13 +68,9 @@ class AVLTree(object):
                 self.max_pointer = new_node
     
     def get_balance(self, node):
-        return self._get_height(node.left) - self._get_height(node.right)
+        return self.get_height(node.left) - self.get_height(node.right)
     
-    def get_height(self, node):
-        if node is None or not node.is_real_node():
-            return -1
-        return node.height
-    
+     
     def add_virtual_nodes(self, node):
         if node is None:
             return
