@@ -16,7 +16,7 @@ class AVLNode(object):
     @type value: string
     @param value: data of your node
     """
-    def __init__(self, key, value):
+    def __init__(self, key=None, value=None):
         self.key = key
         self.value = value
         self.left = None
@@ -31,7 +31,15 @@ class AVLNode(object):
     @returns: False if self is a virtual node, True otherwise.
     """
     def is_real_node(self):
-        return False
+         return self.height != -1
+    
+    def get_height(self):
+        return self.height 
+    
+    def update_height(self):
+        self.height = 1 + max(self.get_height(self.left), self.get_height(self.right))
+
+
 
 
 """
@@ -45,6 +53,9 @@ class AVLTree(object):
     """
     def __init__(self):
         self.root = None
+        self.min_pointer = None
+        self.max_pointer = None
+        self.size = 0
 
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
@@ -113,9 +124,79 @@ class AVLTree(object):
     def insert(self, key, val):
         return None, -1, -1
 
+    def update_min_max(self, new_node):
+            #Update the min and max pointers of the AVL tree.
+            if self.min_pointer is None or new_node.key < self.min_pointer.key:
+                self.min_pointer = new_node
+            if self.max_pointer is None or new_node.key > self.max_pointer.key:
+                self.max_pointer = new_node
+    def get_balance(self, node):
+        """
+        Get the balance factor of a node.
+        """
+        return self._get_height(node.left) - self._get_height(node.right)
+    def get_height(self, node):
+        """
+        Returns the height of the given node. If the node is None or virtual, returns -1.
+        @type node: AVLNode
+        @rtype: int
+        """
+        if node is None or not node.is_real_node():
+            return -1
+        return node.height
+    
+    def add_virtual_nodes(self, node):
+        if node is None:
+            return
+        if node.left is None:
+            node.left = AVLNode()
+        if node.right is None:
+            node.right = AVLNode()
+        return
+    
+   
+    def rotate_left(self,node):
+        if not node or not node.right:
+            return node  # Cannot perform rotation
+        
+        new_root = node.right
+        node.right = new_root.left
+        
+        if new_root.left:
+            new_root.left.parent = node  # Update parent reference
+        
+        new_root.left = node
+        new_root.parent = node.parent
+        node.parent = new_root
+
+        # Update heights (if you're balancing an AVL tree)
+        node.update_height(node)
+        new_root.update_height(node)
+
+        return new_root
+    
+    def rotate_right(self,node):
+        if not node or not node.left:
+            return node  # Cannot perform rotation
+        
+        new_root = node.left
+        node.left = new_root.right
+        
+        if new_root.right:
+            new_root.right.parent = node  # Update parent reference
+        
+        new_root.right = node
+        new_root.parent = node.parent
+        node.parent = new_root
+
+        # Update heights (if you're balancing an AVL tree)
+        node.update_height()
+        new_root.update_height()
+
+        return new_root
+
 
     """inserts a new node into the dictionary with corresponding key and value, starting at the max
-
     @type key: int
     @pre: key currently does not appear in the dictionary
     @param key: key of item that is to be inserted to self
