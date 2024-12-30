@@ -57,6 +57,72 @@ class AVLTree(object):
         self.max_pointer = None
         self.size = 0
 
+    """
+    sheer's helper functions
+    """
+    def update_min_max(self, new_node):
+            #Update the min and max pointers of the AVL tree.
+            if self.min_pointer is None or new_node.key < self.min_pointer.key:
+                self.min_pointer = new_node
+            if self.max_pointer is None or new_node.key > self.max_pointer.key:
+                self.max_pointer = new_node
+    
+    def get_balance(self, node):
+        return self._get_height(node.left) - self._get_height(node.right)
+    
+    def get_height(self, node):
+        if node is None or not node.is_real_node():
+            return -1
+        return node.height
+    
+    def add_virtual_nodes(self, node):
+        if node is None:
+            return
+        if node.left is None:
+            node.left = AVLNode()
+        if node.right is None:
+            node.right = AVLNode()
+        return
+    
+   
+    def rotate_left(self,node):
+        if not node or not node.right:
+            return node  
+        
+        new_root = node.right
+        node.right = new_root.left
+        
+        if new_root.left:
+            new_root.left.parent = node 
+        
+        new_root.left = node
+        new_root.parent = node.parent
+        node.parent = new_root
+
+        node.update_height(node)
+        new_root.update_height(node)
+
+        return new_root
+    
+    def rotate_right(self,node):
+        if not node or not node.left:
+            return node  
+        
+        new_root = node.left
+        node.left = new_root.right
+        
+        if new_root.right:
+            new_root.right.parent = node  
+        
+        new_root.right = node
+        new_root.parent = node.parent
+        node.parent = new_root
+
+        node.update_height()
+        new_root.update_height()
+
+        return new_root
+
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
         
@@ -80,7 +146,6 @@ class AVLTree(object):
         return None, edges + 1
 
  
-
 
     """searches for a node in the dictionary corresponding to the key, starting at the max
         
@@ -122,78 +187,9 @@ class AVLTree(object):
     and h is the number of PROMOTE cases during the AVL rebalancing
     """
     def insert(self, key, val):
+        self.size += 1
+        self.update_min_max(AVLNode(key, val))
         return None, -1, -1
-
-    def update_min_max(self, new_node):
-            #Update the min and max pointers of the AVL tree.
-            if self.min_pointer is None or new_node.key < self.min_pointer.key:
-                self.min_pointer = new_node
-            if self.max_pointer is None or new_node.key > self.max_pointer.key:
-                self.max_pointer = new_node
-    def get_balance(self, node):
-        """
-        Get the balance factor of a node.
-        """
-        return self._get_height(node.left) - self._get_height(node.right)
-    def get_height(self, node):
-        """
-        Returns the height of the given node. If the node is None or virtual, returns -1.
-        @type node: AVLNode
-        @rtype: int
-        """
-        if node is None or not node.is_real_node():
-            return -1
-        return node.height
-    
-    def add_virtual_nodes(self, node):
-        if node is None:
-            return
-        if node.left is None:
-            node.left = AVLNode()
-        if node.right is None:
-            node.right = AVLNode()
-        return
-    
-   
-    def rotate_left(self,node):
-        if not node or not node.right:
-            return node  # Cannot perform rotation
-        
-        new_root = node.right
-        node.right = new_root.left
-        
-        if new_root.left:
-            new_root.left.parent = node  # Update parent reference
-        
-        new_root.left = node
-        new_root.parent = node.parent
-        node.parent = new_root
-
-        # Update heights (if you're balancing an AVL tree)
-        node.update_height(node)
-        new_root.update_height(node)
-
-        return new_root
-    
-    def rotate_right(self,node):
-        if not node or not node.left:
-            return node  # Cannot perform rotation
-        
-        new_root = node.left
-        node.left = new_root.right
-        
-        if new_root.right:
-            new_root.right.parent = node  # Update parent reference
-        
-        new_root.right = node
-        new_root.parent = node.parent
-        node.parent = new_root
-
-        # Update heights (if you're balancing an AVL tree)
-        node.update_height()
-        new_root.update_height()
-
-        return new_root
 
 
     """inserts a new node into the dictionary with corresponding key and value, starting at the max
@@ -208,6 +204,8 @@ class AVLTree(object):
     and h is the number of PROMOTE cases during the AVL rebalancing
     """
     def finger_insert(self, key, val):
+        self.size += 1
+        self.update_min_max(AVLNode(key, val))
         return None, -1, -1
 
 
@@ -217,6 +215,8 @@ class AVLTree(object):
     @pre: node is a real pointer to a node in self
     """
     def delete(self, node):
+        self.size -= 1
+        # Update the min and max pointers of the AVL tree.
         return	
 
     
@@ -255,7 +255,12 @@ class AVLTree(object):
     @returns: a sorted list according to key of touples (key, value) representing the data structure
     """
     def avl_to_array(self):
-        return None
+        def avl_to_array_helper(node):
+            if node is None or node.height == -1:
+                return []
+            return avl_to_array_helper(node.left) + [(node.key, node.value)] + avl_to_array_helper(node.right)
+        return avl_to_array_helper(self.root)
+        
 
 
     """returns the node with the maximal key in the dictionary
@@ -264,7 +269,8 @@ class AVLTree(object):
     @returns: the maximal node, None if the dictionary is empty
     """
     def max_node(self):
-        return None
+        return self.max_pointer
+    
 
     """returns the number of items in dictionary 
 
@@ -272,7 +278,7 @@ class AVLTree(object):
     @returns: the number of items in dictionary 
     """
     def size(self):
-        return -1	
+        return self.size
 
 
     """returns the root of the tree representing the dictionary
@@ -281,4 +287,4 @@ class AVLTree(object):
     @returns: the root, None if the dictionary is empty
     """
     def get_root(self):
-        return None
+        return self.root
