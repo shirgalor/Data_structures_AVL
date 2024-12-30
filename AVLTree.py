@@ -82,6 +82,20 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     """
     def finger_search(self, key):
+        current_node = self.max_pointer
+        edge = -1
+        while current_node is not None:
+            if current_node.key == key:
+                return current_node, edge + 1
+            elif current_node.key > key:
+                current_node = current_node.parent
+            elif current_node.key < key: 
+                new_tree = AVLTree(current_node)
+                found_node, path =  new_tree.search(key)
+                if found_node is not None:
+                    return found_node, path + edge + 1
+                break
+            edge += 1
         return None, -1
 
 
