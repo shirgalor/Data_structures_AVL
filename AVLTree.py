@@ -118,6 +118,18 @@ class AVLTree(object):
         new_root.update_height()
 
         return new_root
+    
+    def find_min(self):
+        node = self.root
+        while node.height != -1:
+            node = node.left
+        return node.parent
+    
+    def find_max(self):
+        node = self.root
+        while node.height != -1:
+            node = node.right
+        return node.parent
 
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
@@ -212,7 +224,28 @@ class AVLTree(object):
     """
     def delete(self, node):
         self.size -= 1
-        # Update the min and max pointers of the AVL tree.
+        if node.left.height == -1 and node.right.height == -1:
+            node = node.parent
+            self.add_virtual_nodes(node)
+            
+        elif node.left.height == -1:
+            # add code
+            print("left")
+            
+            
+        elif node.right.height == -1:
+            # add code
+            print("right")
+
+        else:
+            # add code
+            print("both")
+           
+        if node.key == self.min_pointer.key:
+            self.min_pointer = self.find_min()
+        if node.key == self.max_pointer.key:
+            self.max_pointer = self.find_max()
+
         return	
 
     
