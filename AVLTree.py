@@ -16,12 +16,12 @@ class AVLNode(object):
     @type value: string
     @param value: data of your node
     """
-    def __init__(self, key=None, value=None):
+    def __init__(self, key=None, value=None, parent=None):
         self.key = key
         self.value = value
         self.left : AVLNode = None
         self.right : AVLNode = None
-        self.parent : AVLNode = None
+        self.parent : AVLNode = parent
         self.height = -1
         
 
@@ -64,11 +64,9 @@ class AVLTree(object):
         if node is None:
             return
         if node.left is None:
-            node.left = AVLNode()
-            node.left.parent = node
+            node.left = AVLNode(parent=node)
         if node.right is None:
-            node.right = AVLNode()
-            node.right.parent = node
+            node.right = AVLNode(parent=node)
         return
     
    
@@ -387,7 +385,7 @@ class AVLTree(object):
         return new_node, edges, promote
     
     def _delete_leaf(self, node:AVLNode):
-        virtual_node = AVLNode()
+        virtual_node = AVLNode(parent=node.parent)
     
         if node.parent is None:
             self.root = None
@@ -405,13 +403,23 @@ class AVLTree(object):
         has_left = node.left.is_real_node()
         has_right = node.right.is_real_node()
         
-        if node.left.is_real_node():
-            replacement = self._predecessor(node)
-        elif node.right.is_real_node():
-            replacement = self._successor(node)        
+        if not (has_left or has_right): # node is a leaf
+            self._delete_leaf(node)
+        elif has_left and not has_right: # unary node (left child)
+            node.parent.right = node.left
+            node.left.parent = node.parent
+        elif has_right and not has_left: # unary node (right child)
+            node.parent.left = node.right
+            node.right.parent = node.parent
+        else: # node has two children
+            replacement = self._successor(node)
 
-        if replacement:
-            if node.parent: # node is somewhere in the tree
+            # remove replacement from its current position
+            replacement.parent.left = replacement.right
+            replacement.right.parent = replacement.parent
+
+            # swap replacement with node
+            if node.parent: # node is somewhere in the tree (not the root)
                 if replacement.key < node.parent.key: # replacement should be left child
                     node.parent.left = replacement
                 else:
@@ -420,19 +428,19 @@ class AVLTree(object):
                 rebalance_node = replacement.parent
             else: # node is the root
                 if replacement.key < replacement.parent.key:
-                    replacement.parent.left = AVLNode()
+                    replacement.parent.left = AVLNode(parent=replacement.parent)
                 else:
-                    replacement.parent.right = AVLNode()
+                    replacement.parent.right = AVLNode(parent=replacement.parent)
                 replacement.parent = None
-                replacement.left = node.left
-                node.left.parent = replacement
-                replacement.right = node.right
-                node.right.parent = replacement
                 self.root = replacement
                 rebalance_node = replacement
-        else: # node is a leaf
-            self._delete_leaf(node)
         
+            # update children of replacement
+            replacement.left = node.left
+            node.left.parent = replacement
+            replacement.right = node.right
+            node.right.parent = replacement
+
         self._rebalance_tree(rebalance_node)
 
     def _rebalance(self, node:AVLNode):
