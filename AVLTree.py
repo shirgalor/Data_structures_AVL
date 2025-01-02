@@ -63,10 +63,23 @@ class AVLTree(object):
     def _add_virtual_nodes(self, node):
         if node is None:
             return
+             
         if node.left is None:
             node.left = AVLNode(parent=node)
         if node.right is None:
             node.right = AVLNode(parent=node)
+        return
+    
+    def _reparent(self, node:AVLNode, new_parent:AVLNode):
+        """Reparents node to new_parent."""
+        if node is None:
+            return
+        if new_parent is not None:
+            if node.key < new_parent.key:
+                new_parent.left = node
+            else:
+                new_parent.right = node
+        node.parent = new_parent
         return
     
    
@@ -84,7 +97,7 @@ class AVLTree(object):
         new_root.parent = node.parent
 
         if new_root.parent is not None:
-            if new_root.parent.key < new_root.key:
+            if new_root.parent.key < new_root.key: # new_root is right child
                 new_root.parent.right = new_root
             else:
                 new_root.parent.left = new_root
@@ -139,10 +152,20 @@ class AVLTree(object):
         while node.height != -1:
             node = node.right
         return node.parent
-    
-    
 
-
+    def _search(self, key, root: AVLNode):
+        edges = 0
+        current_node = root
+        while current_node.is_real_node():
+            if current_node.key == key:
+                return current_node, edges
+            elif current_node.key < key:
+                current_node = current_node.right
+            else:
+                current_node = current_node.left
+            edges += 1
+        return current_node, edges
+           
     """searches for a node in the dictionary corresponding to the key (starting at the root)
         
     @type key: int
@@ -152,19 +175,10 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     """
     def search(self, key):
-        current_node = self.root
-        edges = 0
-        while current_node is not None:
-            if current_node.key == key:
-                return current_node, edges + 1
-            elif current_node.key < key:
-                current_node = current_node.right
-            else:
-                current_node = current_node.left
-            edges += 1
-        return None, edges + 1
-
- 
+        node, edges = self._search(key, self.root)
+        if node.is_real_node():
+            return node, edges
+        return None, -1 # Ask about this!!!
 
     """searches for a node in the dictionary corresponding to the key, starting at the max
         
@@ -183,16 +197,13 @@ class AVLTree(object):
             elif current_node.key > key:
                 current_node = current_node.parent
             elif current_node.key < key: 
-                new_tree = AVLTree(current_node)
-                found_node, path =  new_tree.search(key)
+                found_node, path =  self._search(root=current_node, key=key)
                 if found_node is not None:
                     return found_node, path + edge + 1
                 break
             edge += 1
         return None, -1
     
-
-
     """inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
     @type key: int
@@ -213,7 +224,6 @@ class AVLTree(object):
         self._update_min_max()
         return new_node, edges, promote
 
-
     """inserts a new node into the dictionary with corresponding key and value, starting at the max
     @type key: int
     @pre: key currently does not appear in the dictionary
@@ -227,8 +237,17 @@ class AVLTree(object):
     """
     def finger_insert(self, key, val):
         self.size += 1
+        current_node = self.max_pointer
+
+        search_edges = 0
+        while current_node is not None:
+            if current_node.key > key:
+                current_node = current_node.parent
+            elif current_node.key < key: 
+                new_node, insert_edges, promote = self._insert(root=current_node, key=key, val=val)
+            search_edges += 1
         self._update_min_max()
-        return None, -1, -1
+        return new_node, search_edges + insert_edges, promote
 
 
     """deletes node from the dictionary
@@ -283,8 +302,6 @@ class AVLTree(object):
             return avl_to_array_helper(node.left) + [(node.key, node.value)] + avl_to_array_helper(node.right)
         return avl_to_array_helper(self.root)
         
-
-
     """returns the node with the maximal key in the dictionary
 
     @rtype: AVLNode
@@ -293,7 +310,6 @@ class AVLTree(object):
     def max_node(self):
         return self.max_pointer
     
-
     """returns the number of items in dictionary 
 
     @rtype: int
@@ -302,15 +318,13 @@ class AVLTree(object):
     def size(self):
         return self.size
 
-
     """returns the root of the tree representing the dictionary
 
     @rtype: AVLNode
     @returns: the root, None if the dictionary is empty
     """
     def get_root(self):
-        return self.root
-    
+        return self.root   
 
     def _successor(self, node:AVLNode):
         if node.right.height != -1:
@@ -349,15 +363,7 @@ class AVLTree(object):
             return root, 0, 0
         
         # find insertion point
-        edges = 0
-        current_node = root
-        while current_node.is_real_node():
-            if current_node.key < key:
-                current_node = current_node.right
-            else:
-                current_node = current_node.left
-            edges += 1
-
+        current_node, edges = self._search(key, root)
         current_node = current_node.parent # go back to the last real node
         
         # insert new node
