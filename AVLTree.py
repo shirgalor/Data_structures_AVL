@@ -60,6 +60,7 @@ class AVLTree(object):
     """
     sheer's helper functions
     """
+    
     def update_min_max(self, new_node):
             #Update the min and max pointers of the AVL tree.
             if self.min_pointer is None or new_node.key < self.min_pointer.key:
