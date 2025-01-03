@@ -57,6 +57,7 @@ class AVLTree(object):
             self._min = None
             self._max = None
             return
+        # Find the minimum and maximum nodes
         self._min = self._find_min()
         self._max = self._find_max()
     
@@ -64,9 +65,10 @@ class AVLTree(object):
     def _add_virtual_nodes(self, node):
         if node is None:
             return
-             
+         # Add a virtual node if the left child is missing
         if node.left is None:
             node.left = AVLNode(parent=node)
+        # Add a virtual node if the right child is missing
         if node.right is None:
             node.right = AVLNode(parent=node)
         return
@@ -85,15 +87,15 @@ class AVLTree(object):
     
    
     def _rotate_left(self, node:AVLNode):
-        if not node or not node.right:
+        if not node or not node.right: # Invalid node
             return node  
         
-        new_root = node.right
+        new_root = node.right 
         node.right = new_root.left
-        
+
         if new_root.left:
             new_root.left.parent = node 
-        
+
         new_root.left = node
         new_root.parent = node.parent
 
@@ -157,14 +159,14 @@ class AVLTree(object):
     def _search(self, key, root: AVLNode):
         edges = 0
         current_node = root
-        while current_node.is_real_node():
-            if current_node.key == key:
+        while current_node.is_real_node(): # Traverse the tree
+            if current_node.key == key: # Found the key
                 return current_node, edges
-            elif current_node.key < key:
-                current_node = current_node.right
-            else:
+            elif current_node.key < key:  # Move right
+                current_node = current_node.right 
+            else: # Move left
                 current_node = current_node.left
-            edges += 1
+            edges += 1 # Increment the path length
         return current_node, edges
            
     """searches for a node in the dictionary corresponding to the key (starting at the root)
@@ -176,12 +178,12 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     """
     def search(self, key):
-        if self.root is None:
+        if self.root is None: # Empty tree
             return None, -1
-        node, edges = self._search(key, self.root)
-        if node.is_real_node():
+        node, edges = self._search(key, self.root) # Search the tree
+        if node.is_real_node(): # Return the node and the path length
             return node, edges
-        return None, edges
+        return None, edges # Return None if the key is not found
 
     """searches for a node in the dictionary corresponding to the key, starting at the max
         
@@ -194,18 +196,19 @@ class AVLTree(object):
     def finger_search(self, key):
         current_node = self._max
         edge = -1
+        # Traverse the tree from the max node to the root
         while current_node is not None:
-            if current_node.key == key:
+            if current_node.key == key: # Found the key
                 return current_node, edge + 1
-            elif current_node.key > key:
-                current_node = current_node.parent
+            elif current_node.key > key: # Move up the tree
+                current_node = current_node.parent 
             elif current_node.key < key: 
-                found_node, path =  self._search(root=current_node, key=key)
+                found_node, path =  self._search(root=current_node, key=key) # Search the subtree
                 if found_node is not None:
-                    return found_node, path + edge + 1
+                    return found_node, path + edge + 1 # Return the node and the path length
                 break
-            edge += 1
-        return None, -1
+            edge += 1   # Increment the path length
+        return None, -1 # Return None if the key is not found
     
     """inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
@@ -282,19 +285,20 @@ class AVLTree(object):
     """
     def join(self, tree2, key, val):
         new_node = AVLNode(key, val)
+
+        # Update the size of the resulting tree if both trees are non-empty
         if self._size and tree2.size():
             self._size += 1 + tree2.size()
 
         # Case 1: Both trees are empty
         if self.root is None and (tree2 is None or tree2.root is None):
+            # Insert the new node as the root since both trees are empty
             self.root, _, _  = self.insert(key, val)
             return
         
         # case 2: one tree is empty 
         if self.root is None or (tree2 is None or tree2.root is None):
             non_empty_tree = self if self.root else tree2
-            print("non_empty_tree")
-            print(non_empty_tree)
             self.root = non_empty_tree.root
             self._size = non_empty_tree.size()
             self._update_min_max()
@@ -308,25 +312,30 @@ class AVLTree(object):
 
         b_parent = None
         b = tree2.root
-        print("b root"+str(b.key))
-        target_height = self.root.height
+        target_height = self.root.height # Target height to attach `self` to `tree2`
 
+        # Attach `self` to the left or right of the new node based on the key comparison
         if self.root.key < key:
             while b.height > target_height:
                 b_parent = b
                 b = b.left
+            # Attach `self` as the left child of the new node
             new_node.left = self.root
             self.root.parent = new_node
+            # Attach the subtree from `tree2` as the right child of the new node
             new_node.right = b
 
         elif self.root.key > key:
+            # Traverse `tree2` to find the appropriate position based on height
             while b.height > target_height:
                 b_parent = b
                 b = b.right
+            # Attach `self` as the right child of the new node
             self.root.parent = new_node
             new_node.right = self.root
             new_node.left = b
 
+        # Update the parent's reference to point to the new node
         if b_parent:
             if b_parent.left == b:
                 b_parent.left = new_node
@@ -334,7 +343,7 @@ class AVLTree(object):
                 b_parent.right = new_node
             b_parent.update_height()
       
-
+        # Update parent pointers and heights for the new node
         new_node.parent = b_parent
         b.parent = new_node
         if new_node:
@@ -344,9 +353,9 @@ class AVLTree(object):
         tree1 = AVLTree()
         tree1.root = new_node
 
-        
+        # Rebalance the tree starting from the new node
         self.root = self._rebalance_tree(new_node) 
-        self._update_min_max()
+        self._update_min_max() # Update min and max pointers
     
 
     """splits the dictionary at a given node
@@ -360,35 +369,44 @@ class AVLTree(object):
     dictionary larger than node.key.
     """
     def split(self, node):
-        tree1 = AVLTree()
-        tree2 = AVLTree()
+        # Create two empty trees
+        tree1 = AVLTree() 
+        tree2 = AVLTree() 
 
+        # If the given node is None, return empty trees
         if node is None:
             return None, None
-
+        
+        # Detach the left and right subtree of the node and
+        #  ssign it to tree2 and tree1 respectively
         if node.left.is_real_node():
             tree2.root = node.left
-            node.left.parent = None
+            node.left.parent = None # Detach
 
         if node.right.is_real_node():
             tree1.root = node.right
-            node.right.parent = None    
+            node.right.parent = None # Detach   
         
+        # Traverse up the tree to split the remaining structure
         while node.parent is not None:
             temp_tree = AVLTree()
             if node.parent.left == node:
+                # If the current node is the left child, detach the parent's right subtree
                 temp_tree.root = node.parent.right
-               
                 if temp_tree.root.is_real_node():
                     node.parent.right.parent = None  # Detach the subtree
+                     # Join the detached subtree and the parent to tree1
                     tree1.join(temp_tree, node.parent.key, node.parent.value)
                 
             else:
+                # If the current node is the right child, detach the parent's left subtree
                 temp_tree.root = node.parent.left
                 if node.parent.left.is_real_node():
                     node.parent.left.parent = None  # Detach the subtree
+                    # Join the detached subtree and the parent to tree1
                     tree2.join(temp_tree, node.parent.key, node.parent.value)
-            node = node.parent
+            node = node.parent   # Move up to the parent node
+
         return tree2, tree1
 
     
@@ -398,9 +416,18 @@ class AVLTree(object):
     @returns: a sorted list according to key of touples (key, value) representing the data structure
     """
     def avl_to_array(self):
+        """
+        Recursive helper function to traverse the tree in in-order fashion.
+        @type node: AVLNode
+        @param node: The current node being processed.
+        @rtype: list
+        @returns: A list of (key, value) tuples from the subtree rooted at `node`.
+        """
         def avl_to_array_helper(node):
+            # If the node is None or a virtual node, return an empty list
             if node is None or node.height == -1:
                 return []
+            # Traverse the left subtree, process the current node, then the right subtree
             return avl_to_array_helper(node.left) + [(node.key, node.value)] + avl_to_array_helper(node.right)
         return avl_to_array_helper(self.root)
         
