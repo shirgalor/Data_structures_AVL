@@ -53,11 +53,15 @@ class AVLTree(object):
         self.root: AVLNode = None
         self._min = None
         self._max = None
-        self.size = 0
+        self._size = 0
 
     def _update_min_max(self):
-        self.min_pointer = self._find_min()
-        self.max_pointer = self._find_max()
+        if self.root is None:
+            self._min = None
+            self._max = None
+            return
+        self._min = self._find_min()
+        self._max = self._find_max()
     
      
     def _add_virtual_nodes(self, node):
@@ -143,13 +147,13 @@ class AVLTree(object):
     
     def _find_min(self):
         node = self.root
-        while node.height != -1:
+        while node.is_real_node():
             node = node.left
         return node.parent
     
     def _find_max(self):
         node = self.root
-        while node.height != -1:
+        while node.is_real_node():
             node = node.right
         return node.parent
 
@@ -175,10 +179,12 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     """
     def search(self, key):
+        if self.root is None:
+            return None, -1
         node, edges = self._search(key, self.root)
         if node.is_real_node():
             return node, edges
-        return None, -1 # Ask about this!!!
+        return None, edges
 
     """searches for a node in the dictionary corresponding to the key, starting at the max
         
@@ -189,7 +195,7 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     """
     def finger_search(self, key):
-        current_node = self.max_pointer
+        current_node = self._max
         edge = -1
         while current_node is not None:
             if current_node.key == key:
@@ -217,6 +223,7 @@ class AVLTree(object):
     and h is the number of PROMOTE cases during the AVL rebalancing
     """
     def insert(self, key, val):
+        self._size += 1
         new_node, edges, promote = self._insert(self.root, key, val)
         if self.root is None:
             self.root = new_node
@@ -236,8 +243,11 @@ class AVLTree(object):
     and h is the number of PROMOTE cases during the AVL rebalancing
     """
     def finger_insert(self, key, val):
-        self.size += 1
-        current_node = self.max_pointer
+        if self._max is None:
+            return self.insert(key, val)
+
+        self._size += 1
+        current_node = self._max
 
         search_edges = 0
         while current_node is not None:
@@ -245,6 +255,7 @@ class AVLTree(object):
                 current_node = current_node.parent
             elif current_node.key < key: 
                 new_node, insert_edges, promote = self._insert(root=current_node, key=key, val=val)
+                break
             search_edges += 1
         self._update_min_max()
         return new_node, search_edges + insert_edges, promote
@@ -256,7 +267,7 @@ class AVLTree(object):
     @pre: node is a real pointer to a node in self
     """
     def delete(self, node):
-        self.size -= 1
+        self._size -= 1
         self._delete(node)
         self._update_min_max()
 
@@ -308,7 +319,7 @@ class AVLTree(object):
     @returns: the maximal node, None if the dictionary is empty
     """
     def max_node(self):
-        return self.max_pointer
+        return self._max
     
     """returns the number of items in dictionary 
 
@@ -316,7 +327,7 @@ class AVLTree(object):
     @returns: the number of items in dictionary 
     """
     def size(self):
-        return self.size
+        return self._size
 
     """returns the root of the tree representing the dictionary
 
@@ -350,8 +361,6 @@ class AVLTree(object):
     
 
     def _insert(self, root: AVLNode, key, val):
-        self.size += 1
-
         # create new node
         new_node = AVLNode(key, val)
         self._add_virtual_nodes(new_node)
@@ -411,18 +420,27 @@ class AVLTree(object):
         
         if not (has_left or has_right): # node is a leaf
             self._delete_leaf(node)
-        elif has_left and not has_right: # unary node (left child)
-            node.parent.right = node.left
-            node.left.parent = node.parent
-        elif has_right and not has_left: # unary node (right child)
-            node.parent.left = node.right
-            node.right.parent = node.parent
+        elif has_left and not has_right: # unary node (with left child)
+            if node.parent is None: # node is the root
+                self.root = node.left
+                node.left.parent = None
+            else:
+                node.parent.right = node.left
+                node.left.parent = node.parent
+        elif has_right and not has_left: # unary node (with right child)
+            if node.parent is None: # node is the root
+                self.root = node.right
+                node.right.parent = None
+            else:
+                node.parent.left = node.right
+                node.right.parent = node.parent
         else: # node has two children
             replacement = self._successor(node)
 
-            # remove replacement from its current position
-            replacement.parent.left = replacement.right
-            replacement.right.parent = replacement.parent
+            if replacement.parent.key != node.key:
+                # remove replacement from its current position
+                replacement.parent.left = replacement.right
+                replacement.right.parent = replacement.parent
 
             # swap replacement with node
             if node.parent: # node is somewhere in the tree (not the root)
@@ -480,7 +498,9 @@ class AVLTree(object):
             current_node = current_node.parent
 
         self.root = self._rebalance(self.root)
-        self.root.parent = None
+
+        if self.root:
+            self.root.parent = None
 
     def print_tree_with_heights(self):
         if not self.root:
