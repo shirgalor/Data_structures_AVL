@@ -284,8 +284,73 @@ class AVLTree(object):
     or the opposite way
     """
     def join(self, tree2, key, val):
-        return
+        new_node = AVLNode(key, val)
+        if self._size and tree2.size():
+            self._size += 1 + tree2.size()
 
+        # Case 1: Both trees are empty
+        if self.root is None and (tree2 is None or tree2.root is None):
+            self.root, _, _  = self.insert(key, val)
+            return
+        
+        # case 2: one tree is empty 
+        if self.root is None or (tree2 is None or tree2.root is None):
+            non_empty_tree = self if self.root else tree2
+            print("non_empty_tree")
+            print(non_empty_tree)
+            self.root = non_empty_tree.root
+            self._size = non_empty_tree.size()
+            self._update_min_max()
+            self.insert(key, val)
+            return
+
+        # Case 3: Both trees are non-empty
+        # Ensure self is the lower tree 
+        if self.root.height > tree2.root.height:
+            self, tree2 = tree2, self
+
+        b_parent = None
+        b = tree2.root
+        print("b root"+str(b.key))
+        target_height = self.root.height
+
+        if self.root.key < key:
+            while b.height > target_height:
+                b_parent = b
+                b = b.left
+            new_node.left = self.root
+            self.root.parent = new_node
+            new_node.right = b
+
+        elif self.root.key > key:
+            while b.height > target_height:
+                b_parent = b
+                b = b.right
+            self.root.parent = new_node
+            new_node.right = self.root
+            new_node.left = b
+
+        if b_parent:
+            if b_parent.left == b:
+                b_parent.left = new_node
+            else:
+                b_parent.right = new_node
+            b_parent.update_height()
+      
+
+        new_node.parent = b_parent
+        b.parent = new_node
+        if new_node:
+            new_node.update_height()
+        if new_node.parent:
+            new_node.parent.update_height()
+        tree1 = AVLTree()
+        tree1.root = new_node
+
+        
+        self.root = self._rebalance_tree(new_node) 
+        self._update_min_max()
+    
 
     """splits the dictionary at a given node
 
@@ -298,7 +363,36 @@ class AVLTree(object):
     dictionary larger than node.key.
     """
     def split(self, node):
-        return None, None
+        tree1 = AVLTree()
+        tree2 = AVLTree()
+
+        if node is None:
+            return None, None
+
+        if node.left.is_real_node():
+            tree2.root = node.left
+            node.left.parent = None
+
+        if node.right.is_real_node():
+            tree1.root = node.right
+            node.right.parent = None    
+        
+        while node.parent is not None:
+            temp_tree = AVLTree()
+            if node.parent.left == node:
+                temp_tree.root = node.parent.right
+               
+                if temp_tree.root.is_real_node():
+                    node.parent.right.parent = None  # Detach the subtree
+                    tree1.join(temp_tree, node.parent.key, node.parent.value)
+                
+            else:
+                temp_tree.root = node.parent.left
+                if node.parent.left.is_real_node():
+                    node.parent.left.parent = None  # Detach the subtree
+                    tree2.join(temp_tree, node.parent.key, node.parent.value)
+            node = node.parent
+        return tree2, tree1
 
     
     """returns an array representing dictionary 
@@ -466,6 +560,9 @@ class AVLTree(object):
             node.right.parent = replacement
 
         self._rebalance_tree(rebalance_node)
+        self.root = self._rebalance(self.root)
+        if self.root:
+            self.root.parent = None
 
     def _rebalance(self, node:AVLNode):
         """Rebalances the AVL tree starting at node, returns the new root of the subtree."""
@@ -490,17 +587,16 @@ class AVLTree(object):
     def _rebalance_tree(self, node:AVLNode):
         """Rebalances the AVL tree starting at node, returns the new root."""
         current_node = node
+        last_node = None
 
         while current_node is not None:
             current_node.left = self._rebalance(current_node.left)
             current_node.right = self._rebalance(current_node.right)
             current_node.update_height()
+            last_node = current_node
             current_node = current_node.parent
 
-        self.root = self._rebalance(self.root)
-
-        if self.root:
-            self.root.parent = None
+        return last_node
 
     def print_tree_with_heights(self):
         if not self.root:
@@ -557,3 +653,38 @@ class AVLTree(object):
     
     def __str__(self):
         return self._repr_()
+    
+
+if __name__ == "__main__":
+    path = "doc/help.txt"
+    print("tree1")
+    tree1 = AVLTree()
+    tree1.insert(5, "five")
+    tree1.insert(3, "three")
+    tree1.insert(7, "seven")
+    print(tree1)
+
+    # Create the second AVL tree (tree2)
+    tree2 = AVLTree()
+    tree2.insert(15, "fifteen")
+    tree2.insert(12, "twelve")
+    tree2.insert(20, "twenty")
+    tree2.insert(30, "twelve")
+    tree2.insert(40, "twenty")
+    
+    
+    tree1.join(tree2, 10, "ten")
+    print("tree1 after join")
+    print(tree1)
+    tree2, tree1 = tree1.split(tree1.root.right)
+    print("tree1 after split")
+    print(tree1)
+    print("tree2 after split")
+    print(tree2)
+
+    # Print the resulting tree
+    print("\nResulting Tree after join:")
+
+  
+    
+

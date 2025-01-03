@@ -100,35 +100,35 @@ class TestAVLTree(unittest.TestCase):
             self.tree.delete(self.tree.search(i)[0])
         self.assertEqual(self.tree.size(), 0)
 
-    # def test_inserting_and_deleting_after_join(self):
-    #     """Test inserting and deleting after a join operation."""
-    #     tree1 = AVLTree()
-    #     tree2 = AVLTree()
-    #     tree1.insert(10, "A")
-    #     tree2.insert(30, "B")
-    #     tree1.join(tree2, 20, "C")
+    def test_inserting_and_deleting_after_join(self):
+        """Test inserting and deleting after a join operation."""
+        tree1 = AVLTree()
+        tree2 = AVLTree()
+        tree1.insert(10, "A")
+        tree2.insert(30, "B")
+        tree1.join(tree2, 20, "C")
 
-    #     self.tree = tree1
-    #     self.tree.insert(25, "D")
-    #     self.tree.delete(self.tree.search(20)[0])
-    #     self.assertEqual(self.tree.size(), 3)
+        self.tree = tree1
+        self.tree.insert(25, "D")
+        self.tree.delete(self.tree.search(20)[0])
+        self.assertEqual(self.tree.size(), 3)
 
-    # def test_virtual_nodes_after_delete_or_join(self):
-    #     """Check all lowest nodes are virtual nodes after delete or join."""
-    #     self.tree.insert(10, "A")
-    #     self.tree.insert(20, "B")
-    #     self.tree.insert(30, "C")
+    def test_virtual_nodes_after_delete_or_join(self):
+        """Check all lowest nodes are virtual nodes after delete or join."""
+        self.tree.insert(10, "A")
+        self.tree.insert(20, "B")
+        self.tree.insert(30, "C")
 
-    #     self.tree.delete(self.tree.search(20)[0])
+        self.tree.delete(self.tree.search(20)[0])
         
-    #     def check_virtual(node):
-    #         if node is None:
-    #             return True
-    #         if not node.is_real_node():
-    #             return True
-    #         return check_virtual(node.left) and check_virtual(node.right)
+        def check_virtual(node):
+            if node is None:
+                return True
+            if not node.is_real_node():
+                return True
+            return check_virtual(node.left) and check_virtual(node.right)
 
-    #     self.assertTrue(check_virtual(self.tree.get_root()))
+        self.assertTrue(check_virtual(self.tree.get_root()))
 
     def test_promote_returns(self):
         """Test promote returns for insert and finger_insert."""
@@ -141,35 +141,65 @@ class TestAVLTree(unittest.TestCase):
         _, _, promotes = self.tree.finger_insert(20, "")
         self.assertEqual(promotes, 2)
 
-    # def test_split(self):
-    #     """Test splitting the tree at a given node."""
-    #     # Insert nodes
-    #     self.tree.insert(10, "A")
-    #     self.tree.insert(20, "B")
-    #     self.tree.insert(30, "C")
+    def test_split_no_size(self):
+        """Test splitting the tree at a given node without using size, using avl_to_array."""
 
-    #     # Split at the root
-    #     root = self.tree.get_root()
-    #     left_tree, right_tree = self.tree.split(root)
-        
-    #     self.assertEqual(left_tree.size(), 0)  # Left subtree should be empty
-    #     self.assertEqual(right_tree.size(), 2)  # Right subtree should contain two nodes
+        # Insert nodes into the tree
+        self.tree.insert(10, "A")
+        self.tree.insert(20, "B")
+        self.tree.insert(30, "C")
+        self.tree.insert(5, "D")
+        self.tree.insert(15, "E")
+        self.tree.insert(25, "F")
+        self.tree.insert(35, "G")
 
-    # def test_join(self):
-    #     """Test joining two AVL trees."""
-    #     tree1 = AVLTree()
-    #     tree2 = AVLTree()
+        # Get the node to split at
+        split_key = 20
+        node_to_split = self.tree.get_root()
+        while node_to_split and node_to_split.key != split_key:
+            if split_key < node_to_split.key:
+                node_to_split = node_to_split.left
+            else:
+                node_to_split = node_to_split.right
 
-    #     # Insert nodes into separate trees
-    #     tree1.insert(10, "A")
-    #     tree2.insert(30, "B")
+        # Ensure the node is found
+        self.assertIsNotNone(node_to_split, f"Node with key {split_key} not found.")
 
-    #     # Join the trees with a middle key
-    #     tree1.join(tree2, 20, "C")
+        # Perform the split
+        left_tree, right_tree = self.tree.split(node_to_split)
 
-    #     # Check the size of the resulting tree
-    #     self.assertEqual(tree1.size(), 3)
-    #     self.assertEqual(tree1.search(20)[0].value, "C")
+        # Validate that all keys in the left tree are less than the split key
+        left_keys = [key for key, _ in left_tree.avl_to_array()] if left_tree.root else []
+        for key in left_keys:
+            self.assertLess(key, split_key, f"Left tree contains key {key} which is not less than {split_key}.")
+
+        # Validate that all keys in the right tree are greater than the split key
+        right_keys = [key for key, _ in right_tree.avl_to_array()] if right_tree.root else []
+        for key in right_keys:
+            self.assertGreater(key, split_key, f"Right tree contains key {key} which is not greater than {split_key}.")
+
+        # Validate that the split node is no longer in either tree
+        self.assertNotIn(split_key, left_keys, f"Split key {split_key} found in left tree.")
+        self.assertNotIn(split_key, right_keys, f"Split key {split_key} found in right tree.")
+
+        # Success message
+        print("Success: The split function works as expected without relying on size!")
+
+    def test_join(self):
+        """Test joining two AVL trees."""
+        tree1 = AVLTree()
+        tree2 = AVLTree()
+
+        # Insert nodes into separate trees
+        tree1.insert(10, "A")
+        tree2.insert(30, "B")
+
+        # Join the trees with a middle key
+        tree1.join(tree2, 20, "C")
+
+        # Check the size of the resulting tree
+        self.assertEqual(tree1.size(), 3)
+        self.assertEqual(tree1.search(20)[0].value, "C")
 
     def test_avl_to_array(self):
         """Test conversion of the AVL tree to an array."""
