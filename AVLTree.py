@@ -26,7 +26,6 @@ class AVLNode(object):
         
 
     """returns whether self is not a virtual node 
-
     @rtype: bool
     @returns: False if self is a virtual node, True otherwise.
     """
@@ -39,13 +38,11 @@ class AVLNode(object):
     def get_balance(self):
         return self.left.height - self.right.height
 
-
 """
 A class implementing an AVL tree.
 """
 
 class AVLTree(object):
-
     """
     Constructor, you are allowed to add more fields.
     """
