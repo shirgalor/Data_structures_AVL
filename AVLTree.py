@@ -52,16 +52,22 @@ class AVLTree(object):
         self._max = None
         self._size = 0
 
-    def _update_min_max(self, start_node=None):
+    def _update_min_max(self, new_node=None):
 
         if self.root is None:
             self._min = None
             self._max = None
             return
-
-        # Find the minimum and maximum nodes
-        self._min = self._find_min() # O(start_node.height) - O(log n) if starting from the root
-        self._max = self._find_max() # O(start_node.height) - O(log n) if starting from the root
+        
+        if new_node:
+            if new_node.key > self._max.key:
+                self._max = new_node
+            elif new_node.key < self._min.key:
+                self._min = new_node
+        else:
+            # Find the minimum and maximum nodes
+            self._min = self._find_min() # O(log n)
+            self._max = self._find_max() # O(log n)
      
     def _add_virtual_nodes(self, node):
         if node is None:
@@ -347,16 +353,16 @@ class AVLTree(object):
         edge = -1
 
         # Traverse up the tree starting at max
-        while current_node is not None: # O(x.h)
+        while current_node is not None: # O(new_node.height)
             if current_node.key == key: # Found
                 return current_node, edge + 1
             elif current_node.key > key: # Move up
                 current_node = current_node.parent 
             elif current_node.key < key: 
-                found_node, path =  self._search(root=current_node, key=key) # Search the subtree - O(x.h)
+                found_node, path =  self._search(root=current_node, key=key) # Search the subtree - O(new_node.height)
                 if found_node is not None:
                     return found_node, path + edge
-                break # Total time complexity: O(x.h)
+                break # Total time complexity: O(new_node.height)
             edge += 1
 
         return None, -1 # Node not found
@@ -396,21 +402,22 @@ class AVLTree(object):
     def finger_insert(self, key, val):
         if self._max is None:
             return self.insert(key, val) # Empty tree - O(1)
+        else:
+            self._size += 1
+            current_node = self._max
 
-        self._size += 1
-        current_node = self._max
+            search_edges = 0
+            while current_node.parent is not None: # O(new_node.height)
+                if current_node.key > key:
+                    current_node = current_node.parent
+                elif current_node.key < key: 
+                    break
+                search_edges += 1
+            
+            new_node, insert_edges, promote = self._insert(root=current_node, key=key, val=val) # O(current_node.height)
+            self._update_min_max(new_node=new_node) # O(1)
 
-        search_edges = 0
-        while current_node is not None: # O(x.h)
-            if current_node.key > key:
-                current_node = current_node.parent
-            elif current_node.key < key: 
-                new_node, insert_edges, promote = self._insert(root=current_node, key=key, val=val) # O(x.h)
-                break # Total time complexity: O(x.h)
-            search_edges += 1
-        self._update_min_max(start_node=new_node) # O(x.h)
-
-        return new_node, search_edges + insert_edges, promote
+            return new_node, search_edges + insert_edges, promote
 
     """deletes node from the dictionary
 
