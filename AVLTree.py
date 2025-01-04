@@ -384,8 +384,10 @@ class AVLTree(object):
         new_node, edges, promote = self._insert(self.root, key, val) # O(log n)
         if self.root is None:
             self.root = new_node
+            self._min = new_node
+            self._max = new_node
 
-        self._update_min_max() # O(log n)
+        self._update_min_max(new_node=new_node) # O(1)
         return new_node, edges, promote
 
     """inserts a new node into the dictionary with corresponding key and value, starting at the max
