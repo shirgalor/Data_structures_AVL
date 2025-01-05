@@ -353,16 +353,16 @@ class AVLTree(object):
         edge = -1
 
         # Traverse up the tree starting at max
-        while current_node is not None: # O(new_node.height)
+        while current_node is not None: # O(log k)
             if current_node.key == key: # Found
                 return current_node, edge + 1
             elif current_node.key > key: # Move up
                 current_node = current_node.parent 
             elif current_node.key < key: 
-                found_node, path =  self._search(root=current_node, key=key) # Search the subtree - O(new_node.height)
+                found_node, path =  self._search(root=current_node, key=key) # Search the subtree - O(log k)
                 if found_node is not None:
                     return found_node, path + edge
-                break # Total time complexity: O(new_node.height)
+                break # Total time complexity: O(log k)
             edge += 1
 
         return None, -1 # Node not found
@@ -409,14 +409,14 @@ class AVLTree(object):
             current_node = self._max
 
             search_edges = 0
-            while current_node.parent is not None: # O(new_node.height)
+            while current_node.parent is not None: # O(log k)
                 if current_node.key > key:
                     current_node = current_node.parent
                 elif current_node.key < key: 
                     break
                 search_edges += 1
             
-            new_node, insert_edges, promote = self._insert(root=current_node, key=key, val=val) # O(current_node.height)
+            new_node, insert_edges, promote = self._insert(root=current_node, key=key, val=val) # O(log k)
             self._update_min_max(new_node=new_node) # O(1)
 
             return new_node, search_edges + insert_edges, promote
