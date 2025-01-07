@@ -1,9 +1,9 @@
 #id1: 322722364
 #name1: Maya Gal - Yam
 #username1: mayagalyam
-#id2:
-#name2:
-#username2:
+#id2:322590662
+#name2:sheer galor
+#username2:Sheerg1
 
 
 """A class represnting a node in an AVL tree"""
@@ -350,20 +350,20 @@ class AVLTree(object):
     """
     def finger_search(self, key):
         current_node = self._max
-        edge = -1
-
+        edge = 0
         # Traverse up the tree starting at max
         while current_node is not None: # O(log k)
             if current_node.key == key: # Found
                 return current_node, edge + 1
-            elif current_node.key > key: # Move up
-                current_node = current_node.parent 
-            elif current_node.key < key: 
-                found_node, path =  self._search(root=current_node, key=key) # Search the subtree - O(log k)
+            elif current_node.key < key or current_node.key == self.root.key: 
+                found_node, path =  self._search(root=current_node, key=key) # Search the subtree - O(logk)
                 if found_node is not None:
                     return found_node, path + edge
-                break # Total time complexity: O(log k)
+                break # Total time complexity: O(logk)
+            elif current_node.key > key: # Move up
+                current_node = current_node.parent 
             edge += 1
+    
 
         return None, -1 # Node not found
     
